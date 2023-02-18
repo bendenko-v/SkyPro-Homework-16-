@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
@@ -52,9 +52,7 @@ class Offer(db.Model):
 def check_customer(data: dict, role: str) -> bool:
     """ Проверка является ли пользователь исполнителем"""
     user_customer = db.session.query(User).get(data[role])
-    if user_customer.role == 'customer':
-        return True
-    return False
+    return user_customer.role == 'customer'
 
 
 @app.get('/users')
@@ -76,10 +74,10 @@ def user_by_id(uid):
 
 @app.post('/users')
 def add_user():
-    if request.json:
-        data = request.json
-    else:
+    if not request.json:
         return 'Не получилось добавить пользователя!'
+
+    data = request.json
 
     new_user = User(
         first_name=data['first_name'],
@@ -96,10 +94,11 @@ def add_user():
 
 @app.put('/users/<int:uid>')
 def update_user_by_id(uid):
-    if request.json:
-        data = request.json
-    else:
+    if not request.json:
         return f'Не получилось обновить данные пользователя c id {uid}!'
+
+    data = request.json
+
     user = db.session.query(User).get(uid)
     user.first_name = data['first_name']
     user.last_name = data['last_name']
@@ -141,10 +140,9 @@ def order_by_id(uid):
 
 @app.post('/orders')
 def add_order():
-    if request.json:
-        data = request.json
-    else:
+    if not request.json:
         return 'Не получилось добавить заказ!'
+    data = request.json
 
     if not check_customer(data, 'customer_id'):
         return f"Пользователь {data['customer_id']} не является заказчиком! Нельзя создать для него заказ!"
@@ -152,14 +150,11 @@ def add_order():
     if check_customer(data, 'executor_id'):
         return f"Пользователь {data['executor_id']} не является исполнителем! Нельзя создать для него заказ!"
 
-    month_start, day_start, year_start = data['start_date'].split('/')
-    month_end, day_end, year_end = data['end_date'].split('/')
-
     new_order = Order(
         name=data['name'],
         description=data['description'],
-        start_date=datetime.date(int(year_start), int(month_start), int(day_start)),
-        end_date=datetime.date(int(year_end), int(month_end), int(day_end)),
+        start_date=datetime.strptime(data['start_date'], '%m/%d/%Y'),
+        end_date=datetime.strptime(data['end_date'], '%m/%d/%Y'),
         address=data['address'],
         price=data['price'],
         customer_id=data['customer_id'],
@@ -172,10 +167,11 @@ def add_order():
 
 @app.put('/orders/<int:uid>')
 def update_order_by_id(uid):
-    if request.json:
-        data = request.json
-    else:
+    if not request.json:
         return f'Не получилось обновить данные заказа c id {uid}!'
+
+    data = request.json
+
     order = db.session.query(Order).get(uid)
 
     if not check_customer(data, 'customer_id'):
@@ -184,13 +180,10 @@ def update_order_by_id(uid):
     if check_customer(data, 'executor_id'):
         return f"Пользователь {data['executor_id']} не является исполнителем! Нельзя внести изменения в заказ!"
 
-    month_start, day_start, year_start = data['start_date'].split('/')
-    month_end, day_end, year_end = data['end_date'].split('/')
-
     order.name = data['name']
     order.description = data['description']
-    order.start_date = datetime.date(int(year_start), int(month_start), int(day_start))
-    order.end_date = datetime.date(int(year_end), int(month_end), int(day_end))
+    order.start_date = datetime.strptime(data['start_date'], "%m/%d/%Y")
+    order.end_date = datetime.strptime(data['end_date'], "%m/%d/%Y")
     order.address = data['address']
     order.price = data['price']
     order.customer_id = data['customer_id']

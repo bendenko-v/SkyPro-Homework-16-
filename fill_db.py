@@ -2,7 +2,7 @@
 Используется один раз для заполнения данных в базе данных
 """
 
-import datetime
+from datetime import datetime
 
 from main import app, db, User, Order, Offer
 from data import USERS, ORDERS, OFFERS
@@ -25,15 +25,13 @@ for user in USERS:
     )
 
 for order in ORDERS:
-    month_start, day_start, year_start = order['start_date'].split('/')
-    month_end, day_end, year_end = order['end_date'].split('/')
     orders.append(
         Order(
             id=order['id'],
             name=order['name'],
             description=order['description'],
-            start_date=datetime.date(int(year_start), int(month_start), int(day_start)),
-            end_date=datetime.date(int(year_end), int(month_end), int(day_end)),
+            start_date=datetime.strptime(order['start_date'], '%m/%d/%Y'),
+            end_date=datetime.strptime(order['end_date'], '%m/%d/%Y'),
             address=order['address'],
             price=order['price'],
             customer_id=order['customer_id'],
